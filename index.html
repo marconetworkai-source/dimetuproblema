@@ -1,0 +1,1005 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Dime tu problema · El movimiento ciudadano</title>
+<meta name="description" content="El mayor mapa de problemas reales del país. Cuéntanos el tuyo y lo convertimos en una solución gratuita para todos."/>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+tailwind.config = {
+  theme: {
+    extend: {
+      fontFamily: {
+        sans: ['-apple-system','BlinkMacSystemFont','"SF Pro Display"','"SF Pro Text"','"Helvetica Neue"','system-ui','sans-serif'],
+        serif: ['"Instrument Serif"','Georgia','serif'],
+        mono: ['"JetBrains Mono"','ui-monospace','"SF Mono"','Menlo','monospace'],
+      },
+      colors: {
+        ink:    '#08080E',
+        paper:  '#F8F8FC',
+        accent: '#D63228',
+      },
+      keyframes: {
+        rise:    { from:{ opacity:'0', transform:'translateY(32px)' }, to:{ opacity:'1', transform:'translateY(0)' } },
+        fadeIn:  { from:{ opacity:'0' }, to:{ opacity:'1' } },
+        pulse2:  { '0%,100%':{ transform:'scale(1)', opacity:'1' }, '50%':{ transform:'scale(1.5)', opacity:'.6' } },
+        blink:   { '50%':{ opacity:'0' } },
+        dotIn:   { from:{ opacity:'0', transform:'scale(.3)' }, to:{} },
+      },
+      animation: {
+        rise:   'rise 0.7s cubic-bezier(.2,.8,.2,1) both',
+        fadeIn: 'fadeIn 0.6s ease both',
+        pulse2: 'pulse2 2.4s ease-in-out infinite',
+        blink:  'blink 1s steps(2) infinite',
+        dotIn:  'dotIn 0.5s ease-out both',
+      },
+    }
+  }
+}
+</script>
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" crossorigin></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" crossorigin></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" crossorigin></script>
+<style>
+  /* ── Base ── */
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body { background: #08080E; font-family: -apple-system, 'SF Pro Display', 'Helvetica Neue', system-ui, sans-serif; -webkit-font-smoothing: antialiased; overflow-x: hidden; }
+  button, input, textarea, select { font-family: inherit; }
+  input::placeholder, textarea::placeholder { opacity: .4; }
+  select option { background: #1a1a24; color: #f8f8fc; }
+
+  /* ── CSS Variables ── */
+  :root {
+    --ink: #08080E;
+    --paper: #F8F8FC;
+    --accent: #D63228;
+    --accent-glow: rgba(214,50,40,.35);
+    --glass-dark: rgba(255,255,255,.07);
+    --glass-dark-border: rgba(255,255,255,.13);
+    --glass-light: rgba(255,255,255,.55);
+    --glass-light-border: rgba(255,255,255,.75);
+  }
+
+  /* ── Liquid Glass ── */
+  .glass {
+    background: var(--glass-dark);
+    backdrop-filter: blur(24px) saturate(180%);
+    -webkit-backdrop-filter: blur(24px) saturate(180%);
+    border: 1px solid var(--glass-dark-border);
+    box-shadow: 0 8px 32px rgba(0,0,0,.18), inset 0 1px 0 rgba(255,255,255,.15), inset 0 -1px 0 rgba(0,0,0,.08);
+  }
+  .glass-light {
+    background: var(--glass-light);
+    backdrop-filter: blur(20px) saturate(160%);
+    -webkit-backdrop-filter: blur(20px) saturate(160%);
+    border: 1px solid var(--glass-light-border);
+    box-shadow: 0 4px 24px rgba(0,0,0,.06), inset 0 1px 0 rgba(255,255,255,.9);
+  }
+  .glass-btn {
+    background: rgba(255,255,255,.1);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(255,255,255,.2);
+    transition: background .25s ease, border-color .25s ease, transform .2s ease, box-shadow .2s ease;
+  }
+  .glass-btn:hover {
+    background: rgba(255,255,255,.16);
+    border-color: rgba(255,255,255,.3);
+    transform: translateY(-1px);
+    box-shadow: 0 8px 24px rgba(0,0,0,.2);
+  }
+
+  /* ── Scroll Reveal ── */
+  .reveal { opacity: 0; transform: translateY(36px); transition: opacity .75s ease, transform .75s cubic-bezier(.2,.8,.2,1); }
+  .reveal.visible { opacity: 1; transform: translateY(0); }
+  .reveal-delay-1 { transition-delay: .1s; }
+  .reveal-delay-2 { transition-delay: .2s; }
+  .reveal-delay-3 { transition-delay: .3s; }
+  .reveal-delay-4 { transition-delay: .4s; }
+  .reveal-scale { opacity: 0; transform: scale(.94); transition: opacity .7s ease, transform .7s cubic-bezier(.2,.8,.2,1); }
+  .reveal-scale.visible { opacity: 1; transform: scale(1); }
+  @media (prefers-reduced-motion: reduce) {
+    .reveal, .reveal-scale { opacity: 1; transform: none; transition: none; }
+  }
+
+  /* ── Section Stack / 3D ── */
+  .stack-outer { position: relative; z-index: var(--z, 1); }
+  .stack-card {
+    position: relative;
+    transform-origin: top center;
+    transition: transform .5s cubic-bezier(.2,.8,.2,1);
+    will-change: transform;
+  }
+  .stack-card.pinned {
+    transform: scale(.97) translateY(-14px);
+    border-radius: 0 0 28px 28px;
+    overflow: hidden;
+  }
+  /* Section separators get top rounded corners */
+  .section-card {
+    border-radius: 24px 24px 0 0;
+    margin-top: -24px;
+    box-shadow: 0 -20px 60px rgba(0,0,0,.25);
+    overflow: hidden;
+  }
+  .section-first { border-radius: 0; margin-top: 0; box-shadow: none; }
+
+  /* ── Text Reveal Split ── */
+  .word-reveal { overflow: hidden; display: inline-block; }
+  .word-reveal span { display: inline-block; transform: translateY(110%); transition: transform .65s cubic-bezier(.2,.8,.2,1); }
+  .word-reveal.visible span { transform: translateY(0); }
+
+  /* ── Form Inputs ── */
+  .form-input {
+    width: 100%;
+    background: rgba(255,255,255,.06);
+    border: 1px solid rgba(255,255,255,.12);
+    color: #f8f8fc;
+    padding: 14px 18px;
+    border-radius: 12px;
+    font-size: 15px;
+    outline: none;
+    transition: border-color .2s ease, background .2s ease, box-shadow .2s ease;
+    -webkit-appearance: none;
+    appearance: none;
+  }
+  .form-input:focus {
+    border-color: rgba(214,50,40,.6);
+    background: rgba(255,255,255,.09);
+    box-shadow: 0 0 0 3px rgba(214,50,40,.15);
+  }
+  .form-input::placeholder { color: rgba(248,248,252,.35); }
+  .form-label { display: block; font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: .12em; text-transform: uppercase; color: rgba(248,248,252,.5); margin-bottom: 8px; }
+
+  /* ── Scrollbar ── */
+  ::-webkit-scrollbar { width: 4px; }
+  ::-webkit-scrollbar-track { background: #08080E; }
+  ::-webkit-scrollbar-thumb { background: rgba(255,255,255,.12); border-radius: 2px; }
+
+  /* ── Accent Glow ── */
+  .glow-accent { box-shadow: 0 0 32px var(--accent-glow), 0 4px 16px rgba(0,0,0,.3); }
+
+  /* ── FAQ ── */
+  .faq-body { max-height: 0; overflow: hidden; transition: max-height .42s cubic-bezier(.4,0,.2,1), padding .42s ease; }
+  .faq-body.open { max-height: 400px; }
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+/* ══════════════════════════════════════════════
+   CONSTANTS
+══════════════════════════════════════════════ */
+const S = '"Instrument Serif", Georgia, serif';
+const INITIAL_COUNT = 324; // mínimo visible; la API lo reemplaza con el dato real
+
+/* ══════════════════════════════════════════════
+   HOOKS
+══════════════════════════════════════════════ */
+function useMobile(bp = 768) {
+  const [m, setM] = React.useState(() => window.innerWidth < bp);
+  React.useEffect(() => {
+    const mq = window.matchMedia(`(max-width:${bp-1}px)`);
+    const fn = e => setM(e.matches);
+    mq.addEventListener('change', fn); setM(mq.matches);
+    return () => mq.removeEventListener('change', fn);
+  }, [bp]);
+  return m;
+}
+
+function useReveal(ref, threshold = 0.12) {
+  React.useEffect(() => {
+    if (!ref.current) return;
+    const els = ref.current.querySelectorAll('.reveal, .reveal-scale');
+    if (!els.length) return;
+    const obs = new IntersectionObserver(entries => {
+      entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('visible'); obs.unobserve(e.target); } });
+    }, { threshold });
+    els.forEach(el => obs.observe(el));
+    return () => obs.disconnect();
+  }, []);
+}
+
+function useInView(ref, threshold = 0.15) {
+  const [seen, setSeen] = React.useState(false);
+  React.useEffect(() => {
+    if (!ref.current) return;
+    const obs = new IntersectionObserver(([e]) => { if (e.isIntersecting) { setSeen(true); obs.disconnect(); } }, { threshold });
+    obs.observe(ref.current);
+    return () => obs.disconnect();
+  }, []);
+  return seen;
+}
+
+function useCount(target, dur, active) {
+  const [n, setN] = React.useState(0);
+  React.useEffect(() => {
+    if (!active) return;
+    const t0 = performance.now();
+    let id;
+    const tick = now => {
+      const p = Math.min(1, (now - t0) / dur);
+      setN(Math.round((1 - Math.pow(1 - p, 3)) * target));
+      if (p < 1) id = requestAnimationFrame(tick);
+    };
+    id = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(id);
+  }, [active, target]);
+  return n;
+}
+
+/* 3D scroll stack */
+React.useEffect && (() => {})(); // no-op placeholder
+
+/* ══════════════════════════════════════════════
+   PARTICLES
+══════════════════════════════════════════════ */
+function ParticleField({ density=.00010, speed=.16, maxLink=100, color='#ffffff', linkOpacity=.08, particleOpacity=.45 }) {
+  const ref = React.useRef(null);
+  React.useEffect(() => {
+    const c = ref.current; if (!c) return;
+    const ctx = c.getContext('2d');
+    const dpr = Math.min(window.devicePixelRatio||1, 2);
+    let W=0, H=0, pts=[], raf, mouse={x:-9999,y:-9999,on:false};
+    const resize = () => {
+      const r = c.getBoundingClientRect();
+      W=Math.max(1,r.width|0); H=Math.max(1,r.height|0);
+      c.width=W*dpr; c.height=H*dpr; ctx.setTransform(dpr,0,0,dpr,0,0);
+      const n=Math.max(20,Math.min(160,Math.round(W*H*density)));
+      pts=Array.from({length:n},()=>{const a=Math.random()*Math.PI*2,s=(.4+Math.random()*.6)*speed;return{x:Math.random()*W,y:Math.random()*H,vx:Math.cos(a)*s,vy:Math.sin(a)*s,r:.5+Math.random()*1};});
+    };
+    const tick = () => {
+      ctx.clearRect(0,0,W,H);
+      for(const p of pts){
+        if(mouse.on){const dx=p.x-mouse.x,dy=p.y-mouse.y,d2=dx*dx+dy*dy;if(d2<12000){const f=(1-d2/12000)*.4;p.vx+=(dx/Math.sqrt(d2+1))*f*.08;p.vy+=(dy/Math.sqrt(d2+1))*f*.08;}}
+        p.x+=p.vx; p.y+=p.vy; p.vx*=.994; p.vy*=.994;
+        p.vx+=(Math.random()-.5)*.014; p.vy+=(Math.random()-.5)*.014;
+        const sp=Math.hypot(p.vx,p.vy); if(sp<speed*.25){const a=Math.random()*Math.PI*2;p.vx=Math.cos(a)*speed*.25;p.vy=Math.sin(a)*speed*.25;}
+        if(p.x<-4)p.x=W+4; if(p.x>W+4)p.x=-4; if(p.y<-4)p.y=H+4; if(p.y>H+4)p.y=-4;
+      }
+      ctx.strokeStyle=color;
+      for(let i=0;i<pts.length;i++)for(let j=i+1;j<pts.length;j++){const a=pts[i],b=pts[j],d=Math.hypot(a.x-b.x,a.y-b.y);if(d<maxLink){ctx.globalAlpha=(1-d/maxLink)*linkOpacity;ctx.lineWidth=.5;ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.stroke();}}
+      ctx.fillStyle=color;
+      for(const p of pts){ctx.globalAlpha=particleOpacity;ctx.beginPath();ctx.arc(p.x,p.y,p.r,0,Math.PI*2);ctx.fill();}
+      ctx.globalAlpha=1; raf=requestAnimationFrame(tick);
+    };
+    const ro=new ResizeObserver(resize); ro.observe(c); resize(); tick();
+    const par=c.parentElement;
+    const mm=e=>{const r=c.getBoundingClientRect();mouse.x=e.clientX-r.left;mouse.y=e.clientY-r.top;mouse.on=true;};
+    const ml=()=>{mouse.on=false;};
+    par.addEventListener('mousemove',mm); par.addEventListener('mouseleave',ml);
+    return()=>{cancelAnimationFrame(raf);ro.disconnect();par.removeEventListener('mousemove',mm);par.removeEventListener('mouseleave',ml);};
+  },[density,speed,maxLink,color,linkOpacity,particleOpacity]);
+  return <canvas ref={ref} style={{position:'absolute',inset:0,width:'100%',height:'100%',pointerEvents:'none'}}/>;
+}
+
+/* ══════════════════════════════════════════════
+   DOT PROGRESS
+══════════════════════════════════════════════ */
+function DotProgress({ count, cols=50, bucketSize=10, dotSize=8, gap=4 }) {
+  const total=10000, buckets=Math.ceil(total/bucketSize), filled=Math.floor(count/bucketSize), partial=(count%bucketSize)/bucketSize;
+  const rows=Math.ceil(buckets/cols), w=cols*(dotSize+gap)-gap, h=rows*(dotSize+gap)-gap;
+  const dots=[];
+  for(let i=0;i<buckets;i++){
+    let fill,opacity;
+    if(i<filled){fill='#D63228';opacity=1;}
+    else if(i===filled){fill='#D63228';opacity=.35+partial*.65;}
+    else{fill='rgba(255,255,255,.15)';opacity=1;}
+    dots.push(<rect key={i} x={(i%cols)*(dotSize+gap)} y={Math.floor(i/cols)*(dotSize+gap)} width={dotSize} height={dotSize} rx={dotSize*.25} fill={fill} opacity={opacity} style={{animationDelay:`${Math.min((i*3)%900,900)}ms`}} className="animate-dotIn"/>);
+  }
+  return <svg viewBox={`0 0 ${w} ${h}`} width="100%" style={{display:'block'}} preserveAspectRatio="xMidYMid meet">{dots}</svg>;
+}
+
+/* ══════════════════════════════════════════════
+   NAV
+══════════════════════════════════════════════ */
+function Nav({ isM }) {
+  const [scrolled, setScrolled] = React.useState(false);
+  React.useEffect(() => {
+    const fn = () => setScrolled(window.scrollY > 50);
+    window.addEventListener('scroll', fn, {passive:true});
+    return () => window.removeEventListener('scroll', fn);
+  }, []);
+  const go = id => { const el=document.getElementById(id); if(el)el.scrollIntoView({behavior:'smooth'}); };
+  return (
+    <nav className="fixed top-0 left-0 right-0 z-50 transition-all duration-300"
+      style={{
+        background: scrolled ? 'rgba(8,8,14,.82)' : 'transparent',
+        backdropFilter: scrolled ? 'blur(20px) saturate(180%)' : 'none',
+        WebkitBackdropFilter: scrolled ? 'blur(20px) saturate(180%)' : 'none',
+        borderBottom: scrolled ? '1px solid rgba(255,255,255,.08)' : '1px solid transparent',
+      }}>
+      <div className="flex items-center justify-between px-5 md:px-14 py-4 md:py-5">
+        {/* Logo — glass on scroll */}
+        <button onClick={() => window.scrollTo({top:0,behavior:'smooth'})} style={{background:'none',border:'none',cursor:'pointer',padding:0}}>
+          <div className={`flex items-baseline gap-1.5 px-3 py-1.5 rounded-full transition-all duration-300 ${scrolled ? 'glass' : ''}`}>
+            <span style={{fontFamily:S, fontStyle:'italic', fontSize: isM?20:24, color:'#f8f8fc', lineHeight:1}}>dime</span>
+            <span style={{fontFamily:'JetBrains Mono', fontSize:10, color:'rgba(248,248,252,.4)', lineHeight:1}}>·</span>
+            <span style={{fontFamily:S, fontSize: isM?20:24, color:'#f8f8fc', lineHeight:1}}>tu problema</span>
+          </div>
+        </button>
+        {!isM && (
+          <div className="flex gap-8" style={{fontFamily:'JetBrains Mono',fontSize:11,letterSpacing:'.1em',textTransform:'uppercase',color:'rgba(248,248,252,.55)'}}>
+            {[['movimiento','El movimiento'],['contador','Contador'],['formulario','Participa'],['faq','FAQ']].map(([id,label])=>(
+              <span key={id} onClick={()=>go(id)} className="cursor-pointer hover:text-white transition-colors duration-200">{label}</span>
+            ))}
+          </div>
+        )}
+        <button onClick={()=>go('formulario')}
+          className="glass-btn rounded-full text-white font-medium"
+          style={{fontFamily:'inherit',fontSize:isM?12:13,padding:isM?'9px 18px':'11px 24px',background:'rgba(214,50,40,.85)',border:'1px solid rgba(214,50,40,.5)',backdropFilter:'blur(8px)'}}>
+          Sumar mi voz
+        </button>
+      </div>
+    </nav>
+  );
+}
+
+/* ══════════════════════════════════════════════
+   HERO
+══════════════════════════════════════════════ */
+function Hero({ isM, liveCount }) {
+  const go = id => { const el=document.getElementById(id); if(el)el.scrollIntoView({behavior:'smooth'}); };
+  return (
+    <section id="hero" className="section-first relative overflow-hidden flex flex-col justify-end"
+      style={{minHeight:'100svh', background:'linear-gradient(160deg,#0c0c18 0%,#08080e 60%,#120810 100%)', paddingTop: isM?'6rem':'7rem', paddingBottom: isM?'3rem':'4rem', paddingLeft: isM?'1.375rem':'3.5rem', paddingRight: isM?'1.375rem':'3.5rem'}}>
+      <ParticleField density={.00014} speed={.18} color="#ffffff" linkOpacity={.07} particleOpacity={.4} maxLink={isM?60:100}/>
+
+      {/* Badge */}
+      <div className="relative z-10 mb-5 md:mb-7 animate-rise" style={{animationDelay:'.1s'}}>
+        <div className="glass inline-flex items-center gap-2.5 px-4 py-2 rounded-full"
+          style={{fontFamily:'JetBrains Mono',fontSize:isM?10:11,letterSpacing:'.14em',textTransform:'uppercase',color:'rgba(248,248,252,.75)'}}>
+          <span className="animate-pulse2 rounded-full inline-block" style={{width:7,height:7,background:'#D63228',boxShadow:'0 0 0 3px rgba(214,50,40,.3)'}}/>
+          Movimiento ciudadano · España 2026
+        </div>
+      </div>
+
+      {/* Headline */}
+      <div className="relative z-10 animate-rise" style={{animationDelay:'.2s'}}>
+        <h1 style={{fontFamily:S, fontWeight:400, fontSize:isM?'clamp(52px,14vw,72px)':'clamp(80px,8vw,128px)', lineHeight:.92, letterSpacing:'-.025em', color:'#f8f8fc', marginBottom:isM?'1.25rem':'2rem'}}>
+          Lo que te duele,<br/>
+          <span style={{fontStyle:'italic', color:'rgba(248,248,252,.65)'}}>a miles les duele también.</span>
+        </h1>
+        <p style={{fontSize:isM?16:20, lineHeight:1.5, color:'rgba(248,248,252,.65)', maxWidth:isM?'100%':580, marginBottom:isM?'2rem':'3rem', fontWeight:400}}>
+          El mayor mapa de problemas reales del país.
+          {isM ? ' ' : <br/>}
+          Cuéntanos el tuyo y lo convertimos en solución gratuita para todos.
+        </p>
+
+        <div className="flex gap-3 md:gap-4" style={{flexDirection:isM?'column':'row'}}>
+          <button onClick={()=>go('formulario')}
+            style={{background:'#D63228', color:'#fff', border:'none', borderRadius:999, padding:isM?'15px 24px':'17px 32px', fontSize:isM?15:16, fontWeight:600, cursor:'pointer', display:'inline-flex', alignItems:'center', gap:10, justifyContent:'center', transition:'transform .2s ease, box-shadow .2s ease'}}
+            onMouseEnter={e=>{e.currentTarget.style.transform='translateY(-2px)';e.currentTarget.style.boxShadow='0 12px 32px rgba(214,50,40,.5)';}}
+            onMouseLeave={e=>{e.currentTarget.style.transform='none';e.currentTarget.style.boxShadow='none';}}>
+            Sumar mi voz al movimiento
+            <span style={{fontFamily:'JetBrains Mono',fontSize:13,opacity:.8}}>→</span>
+          </button>
+          <button onClick={()=>go('movimiento')}
+            className="glass-btn rounded-full text-white"
+            style={{padding:isM?'15px 24px':'17px 28px', fontSize:isM?15:15, display:'inline-flex', alignItems:'center', gap:8, justifyContent:'center'}}>
+            Ver cómo funciona
+          </button>
+        </div>
+      </div>
+
+      {/* Counter bar */}
+      <div className="relative z-10 flex justify-between items-end animate-rise"
+        style={{marginTop:isM?'3rem':'4rem', animationDelay:'.4s', fontFamily:'JetBrains Mono', fontSize:isM?10:11, letterSpacing:'.08em', textTransform:'uppercase', color:'rgba(248,248,252,.5)'}}>
+        <div className="flex flex-col gap-1">
+          <span>Personas que ya han hablado</span>
+          <span style={{fontSize:isM?24:30, letterSpacing:'-.02em', color:'rgba(248,248,252,.9)', fontFeatureSettings:'"tnum"'}}>
+            {liveCount.toLocaleString('es-ES')}<span style={{opacity:.35}}> / 10.000</span>
+          </span>
+        </div>
+        {!isM && <div className="flex flex-col items-end gap-1"><span style={{opacity:.4}}>Scroll para ver</span><span style={{fontSize:20}}>↓</span></div>}
+      </div>
+    </section>
+  );
+}
+
+/* ══════════════════════════════════════════════
+   HOW IT WORKS
+══════════════════════════════════════════════ */
+function HowItWorks({ isM }) {
+  const ref = React.useRef(null);
+  const [hovered, setHovered] = React.useState(1);
+  const [stacked, setStacked] = React.useState(false);
+  useReveal(ref);
+
+  const phases = [
+    { n:'01', meta:'Fase 01 · escucha', title:'Habla.', italic:'Sin filtros.', body:'No hace falta ser experto ni tener solución. Cuéntanos qué te quita el sueño, qué no funciona, qué te parece injusto. Eso es todo.', stat:'3 minutos', sub:'es suficiente' },
+    { n:'02', meta:'Fase 02 · análisis', title:'Escuchamos.', italic:'A 10.000 personas.', body:'Con suficientes voces reales, la IA identifica el problema que afecta a más gente y tiene solución posible. No somos nosotros: son los datos de la ciudadanía.', stat:'10.000', sub:'voces necesarias' },
+    { n:'03', meta:'Fase 03 · construcción', title:'Se construye.', italic:'Para todos.', body:'Desarrollamos la app de forma abierta y la entregamos libre, gratuita y sin condiciones. Ni suscripciones, ni anuncios, ni letra pequeña. Jamás.', stat:'Gratis.', sub:'siempre' },
+  ];
+
+  return (
+    <section id="movimiento" ref={ref} className="section-card relative overflow-visible"
+      style={{background:'#F8F8FC', paddingTop:isM?'5rem':'9rem', paddingBottom:isM?'5rem':'10rem', paddingLeft:isM?'1.375rem':'3.5rem', paddingRight:isM?'1.375rem':'3.5rem'}}>
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-baseline gap-4 md:gap-0" style={{marginBottom:isM?'3rem':'5.5rem'}}>
+        <div className="flex items-center gap-3 flex-wrap reveal"
+          style={{fontFamily:'JetBrains Mono',fontSize:isM?10:11,letterSpacing:'.14em',textTransform:'uppercase',color:'rgba(8,8,14,.45)'}}>
+          <span>[ 01 ] El movimiento</span>
+          <button onClick={()=>setStacked(s=>!s)} style={{fontFamily:'JetBrains Mono',fontSize:10,letterSpacing:'.1em',textTransform:'uppercase',background:stacked?'#08080E':'transparent',color:stacked?'#f8f8fc':'#08080e',border:'1px solid rgba(8,8,14,.25)',borderRadius:999,padding:'5px 12px',cursor:'pointer',transition:'all .25s ease'}}>
+            {stacked?'◉ apiladas':'◯ apilar'}
+          </button>
+        </div>
+        <h2 className="reveal reveal-delay-1" style={{fontFamily:S, fontWeight:400, fontSize:isM?'2.75rem':'5.5rem', lineHeight:.95, letterSpacing:'-.02em', color:'#08080E', maxWidth:isM?'100%':780, textAlign:isM?'left':'right', margin:0}}>
+          Un gesto tuyo puede cambiar la vida de <span style={{fontStyle:'italic'}}>miles.</span>
+        </h2>
+      </div>
+
+      <div className="reveal reveal-delay-2" style={{position:'relative', display:stacked?'block':(isM?'flex':'grid'), flexDirection:isM&&!stacked?'column':undefined, gridTemplateColumns:!stacked&&!isM?'repeat(3,1fr)':undefined, gap:stacked?0:(isM?'1rem':1), background:stacked?'transparent':'rgba(8,8,14,.08)', border:stacked?'none':'1px solid rgba(8,8,14,.08)', minHeight:stacked?(isM?360:520):'auto', perspective:1400}}>
+        {phases.map((p,i) => {
+          const isH=hovered===i;
+          const sT=stacked?(isH?`translate(-50%,-50%) translateY(${(i-1)*(isM?-120:-155)}px) rotate(0deg) scale(1)`:`translate(-50%,-50%) translateY(${(i-1)*(isM?13:20)}px) rotate(${(i-1)*2.5}deg) scale(${1-Math.abs(i-hovered)*.04})`): 'none';
+          return (
+            <div key={i} onMouseEnter={()=>setHovered(i)} onClick={()=>setHovered(i)} style={{background:'#F8F8FC', padding:isM?'2rem 1.5rem':'2.75rem 2.25rem 3.5rem', minHeight:isM?240:440, width:stacked?(isM?300:450):'auto', position:stacked?'absolute':'relative', left:stacked?'50%':undefined, top:stacked?'50%':undefined, transform:sT, transformOrigin:'center center', zIndex:stacked?(isH?10:3-Math.abs(i-hovered)):1, transition:'transform .65s cubic-bezier(.2,.8,.2,1), box-shadow .45s ease', boxShadow:stacked?(isH?`0 40px 80px -20px rgba(8,8,14,.35), 0 2px 0 #08080e`:`0 16px 40px -10px rgba(8,8,14,.2), 0 1px 0 rgba(8,8,14,.25)`):'none', border:stacked?'1px solid rgba(8,8,14,.1)':'none', borderRadius:stacked?18:0, cursor:'pointer', display:'flex', flexDirection:'column'}}>
+              <div style={{fontFamily:'JetBrains Mono',fontSize:11,letterSpacing:'.14em',textTransform:'uppercase',color:'rgba(8,8,14,.4)',display:'flex',justifyContent:'space-between'}}>
+                <span>{p.meta}</span>
+                <span style={{fontFamily:S,fontStyle:'italic',fontSize:28,lineHeight:.8,color:'rgba(8,8,14,.3)'}}>{p.n}</span>
+              </div>
+              <h3 style={{fontFamily:S, fontWeight:400, fontSize:isM?'2.25rem':'3.25rem', lineHeight:.95, letterSpacing:'-.02em', color:'#08080E', margin:isM?'1.5rem 0 1rem':'2.25rem 0 1.25rem'}}>
+                {p.title}<br/><span style={{fontStyle:'italic'}}>{p.italic}</span>
+              </h3>
+              <p style={{fontSize:isM?15:15.5, lineHeight:1.6, color:'rgba(8,8,14,.65)', maxWidth:320, margin:0}}>{p.body}</p>
+              <div style={{marginTop:'auto', paddingTop:isM?'1.75rem':'3rem', display:'flex', alignItems:'baseline', gap:10, borderTop:'1px solid rgba(8,8,14,.1)', fontFamily:'JetBrains Mono', fontSize:11, letterSpacing:'.1em', textTransform:'uppercase', color:'rgba(8,8,14,.5)'}}>
+                <span style={{fontSize:isM?26:30, fontFamily:S, letterSpacing:'-.02em', textTransform:'none', color:'#08080E'}}>{p.stat}</span>
+                <span>{p.sub}</span>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {!stacked && !isM && (
+        <div style={{marginTop:32, display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:1, background:'rgba(8,8,14,.08)', fontFamily:'JetBrains Mono', fontSize:10, letterSpacing:'.14em', textTransform:'uppercase', color:'rgba(8,8,14,.4)'}}>
+          {[['escucha','→'],['análisis','→'],['construcción','◉']].map(([l,a])=>(
+            <div key={l} style={{background:'#F8F8FC', padding:'14px 36px', display:'flex', justifyContent:'space-between'}}>
+              <span>{l}</span><span>{a}</span>
+            </div>
+          ))}
+        </div>
+      )}
+    </section>
+  );
+}
+
+/* ══════════════════════════════════════════════
+   COUNTER  — liquid glass
+══════════════════════════════════════════════ */
+function CounterSection({ isM, liveCount }) {
+  const ref = React.useRef(null);
+  const inView = useInView(ref, .1);
+  const count = useCount(liveCount, 2500, inView);
+  const pct = Math.min(100, (count/10000)*100);
+  useReveal(ref);
+
+  return (
+    <section id="contador" ref={ref} className="section-card relative overflow-hidden"
+      style={{background:'linear-gradient(160deg,#0d0d1a 0%,#08080e 100%)', paddingTop:isM?'5rem':'9rem', paddingBottom:isM?'5rem':'10rem', paddingLeft:isM?'1.375rem':'3.5rem', paddingRight:isM?'1.375rem':'3.5rem'}}>
+      <ParticleField density={.00005} speed={.09} color="#ffffff" linkOpacity={.05} particleOpacity={.35} maxLink={130}/>
+
+      <div className="relative z-10 flex flex-col items-center text-center">
+        <div className="reveal flex items-center gap-2.5 mb-10 md:mb-14" style={{fontFamily:'JetBrains Mono',fontSize:isM?10:11,letterSpacing:'.14em',textTransform:'uppercase',color:'rgba(248,248,252,.45)'}}>
+          <span className="animate-pulse2 inline-block rounded-full" style={{width:8,height:8,background:'#D63228',boxShadow:'0 0 0 3px rgba(214,50,40,.3)'}}/>
+          [ 02 ] El mapa del país real
+        </div>
+
+        {/* Glass counter */}
+        <div className="glass reveal rounded-3xl px-8 md:px-16 py-10 md:py-16 w-full" style={{maxWidth:isM?'100%':860}}>
+          <div style={{fontFamily:S, fontSize:isM?'clamp(80px,22vw,110px)':'clamp(120px,18vw,220px)', lineHeight:.88, letterSpacing:'-.04em', fontFeatureSettings:'"tnum","lnum"', color:'#f8f8fc', opacity:inView?1:0, transform:inView?'none':'translateY(30px)', transition:'opacity .6s ease, transform .6s ease'}}>
+            {count.toLocaleString('es-ES')}
+          </div>
+          <div style={{fontFamily:S, fontStyle:'italic', fontSize:isM?20:28, color:'rgba(248,248,252,.45)', marginTop:isM?6:10}}>
+            de diez mil voces
+          </div>
+
+          {/* Progress bar */}
+          <div style={{width:'100%', marginTop:isM?'2rem':'3rem'}}>
+            <div style={{display:'flex', justifyContent:'space-between', fontFamily:'JetBrains Mono', fontSize:11, letterSpacing:'.1em', textTransform:'uppercase', color:'rgba(248,248,252,.4)', marginBottom:10}}>
+              <span>0</span>
+              <span style={{color:'#D63228', opacity:1}}>{pct.toFixed(1)}%</span>
+              <span>10.000</span>
+            </div>
+            <div style={{position:'relative', height:2, background:'rgba(255,255,255,.1)'}}>
+              <div style={{position:'absolute',top:0,left:0,height:'100%',width:`${pct}%`,background:'rgba(248,248,252,.7)',transition:'width 60ms linear'}}/>
+              <div style={{position:'absolute',top:-4,left:`${pct}%`,width:10,height:10,borderRadius:'50%',background:'#D63228',transform:'translateX(-50%)',boxShadow:'0 0 0 3px rgba(214,50,40,.4)',transition:'left 60ms linear'}}/>
+            </div>
+          </div>
+
+          {/* Dot grid */}
+          <div style={{width:'100%', maxWidth:isM?260:760, margin:'2rem auto 0'}}>
+            {inView && <DotProgress count={count} cols={isM?10:50} bucketSize={isM?100:10} dotSize={isM?14:8} gap={isM?6:4}/>}
+            <div style={{display:'flex', justifyContent:'space-between', marginTop:12, fontFamily:'JetBrains Mono', fontSize:10, letterSpacing:'.1em', textTransform:'uppercase', color:'rgba(248,248,252,.3)'}}>
+              <span>1 punto = {isM?'100':'10'} personas</span>
+              <span>{isM?'100':'1.000'} en total</span>
+            </div>
+          </div>
+        </div>
+
+        <p className="reveal reveal-delay-2" style={{marginTop:isM?'1.75rem':'2.5rem', fontFamily:'JetBrains Mono', fontSize:isM?11:12, letterSpacing:'.1em', textTransform:'uppercase', color:'rgba(248,248,252,.35)', maxWidth:480}}>
+          Son personas, no datos. Cada número es alguien que se atrevió a decirlo en voz alta.
+        </p>
+      </div>
+    </section>
+  );
+}
+
+/* ══════════════════════════════════════════════
+   MANIFESTO
+══════════════════════════════════════════════ */
+function Manifesto({ isM }) {
+  const ref = React.useRef(null);
+  useReveal(ref);
+  return (
+    <section ref={ref} className="section-card relative overflow-hidden"
+      style={{background:'linear-gradient(160deg,#0f0f1c 0%,#08080e 100%)', paddingTop:isM?'5.5rem':'11rem', paddingBottom:isM?'5.5rem':'12rem', paddingLeft:isM?'1.375rem':'3.5rem', paddingRight:isM?'1.375rem':'3.5rem'}}>
+      <ParticleField density={.00006} speed={.11} color="#ffffff" linkOpacity={.05} particleOpacity={.3} maxLink={110}/>
+      <div className="relative z-10" style={{maxWidth:960, margin:'0 auto'}}>
+        <div className="reveal" style={{fontFamily:'JetBrains Mono',fontSize:isM?10:11,letterSpacing:'.18em',textTransform:'uppercase',color:'rgba(248,248,252,.35)',marginBottom:isM?'1.75rem':'2.75rem'}}>
+          ✦ Por qué existe esto
+        </div>
+        <p className="reveal reveal-delay-1" style={{fontFamily:S, fontWeight:400, fontSize:isM?'clamp(24px,7vw,32px)':'clamp(36px,5vw,56px)', lineHeight:1.1, letterSpacing:'-.02em', color:'#f8f8fc'}}>
+          Porque la queja que nunca dijiste en voz alta{' '}
+          <span style={{color:'rgba(248,248,252,.4)'}}>es exactamente la misma que tienen millones de personas.</span>{' '}
+          Porque los sistemas que deberían ayudarte{' '}
+          <span style={{fontStyle:'italic', color:'#D63228'}}>fueron diseñados sin preguntarte.</span>{' '}
+          <span style={{color:'rgba(248,248,252,.4)'}}>
+            Porque una persona con una IA puede hacer lo que cien reuniones corporativas no consiguen: escuchar de verdad, y actuar.
+          </span>
+        </p>
+        <div className="reveal reveal-delay-2 flex items-center gap-4 mt-12 md:mt-20"
+          style={{fontFamily:'JetBrains Mono',fontSize:11,letterSpacing:'.14em',textTransform:'uppercase',color:'rgba(248,248,252,.4)'}}>
+          <span style={{display:'inline-block',width:36,height:1,background:'rgba(248,248,252,.25)'}}/>
+          Firmado por quien lo lea.
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/* ══════════════════════════════════════════════
+   FORM — liquid glass, 9 fields
+══════════════════════════════════════════════ */
+const SECTORS = ['Sanidad y salud','Educación','Vivienda y alquiler','Trabajo y empleo','Transporte y movilidad','Seguridad y justicia','Medio ambiente','Burocracia y administración','Economía personal','Familia y cuidados','Soledad y comunidad','Otro'];
+const PRICES = ['Nada, solo si es gratis','Menos de 5 € / mes','Entre 5 y 10 € / mes','Más de 10 € / mes','Lo que hiciera falta'];
+const COUNTRIES = ['España','Argentina','Bolivia','Brasil','Chile','Colombia','Costa Rica','Cuba','Ecuador','El Salvador','Guatemala','Honduras','México','Nicaragua','Panamá','Paraguay','Perú','República Dominicana','Uruguay','Venezuela','Alemania','Australia','Austria','Bélgica','Canadá','Dinamarca','Emiratos Árabes','Estados Unidos','Filipinas','Finlandia','Francia','Grecia','Holanda','Hungría','India','Israel','Italia','Japón','Marruecos','Nigeria','Noruega','Polonia','Portugal','Reino Unido','República Checa','Rumanía','Rusia','Suecia','Suiza','Turquía','Otro'];
+const PROVINCIAS = ['Álava','Albacete','Alicante','Almería','Asturias','Ávila','Badajoz','Barcelona','Bizkaia','Burgos','Cáceres','Cádiz','Cantabria','Castellón','Ciudad Real','Córdoba','A Coruña','Cuenca','Gipuzkoa','Girona','Granada','Guadalajara','Huelva','Huesca','Jaén','La Rioja','Las Palmas','León','Lleida','Lugo','Madrid','Málaga','Murcia','Navarra','Ourense','Palencia','Pontevedra','Salamanca','Santa Cruz de Tenerife','Segovia','Sevilla','Soria','Tarragona','Teruel','Toledo','Valencia','Valladolid','Zamora','Zaragoza','Ceuta','Melilla'];
+const RRSS = ['Instagram','TikTok','Twitter / X','Facebook','YouTube','LinkedIn'];
+
+function FormSection({ isM }) {
+  const ref = React.useRef(null);
+  useReveal(ref);
+  const [step, setStep] = React.useState(0);
+  const [done, setDone] = React.useState(false);
+  const [submitting, setSubmitting] = React.useState(false);
+  const [apiError, setApiError] = React.useState('');
+  const [fd, setFd] = React.useState({nombre:'',email:'',sector:'',sectorOtro:'',descripcion:'',solucion:'',precio:'',pais:'',provincia:'',ciudadLibre:'',enterado:[],enteradoRrss:[],enteradoOtroText:''});
+  const set = (k,v) => setFd(d=>({...d,[k]:v}));
+  const toggleArr = (k,v) => setFd(d=>({...d,[k]:d[k].includes(v)?d[k].filter(x=>x!==v):[...d[k],v]}));
+  const next = () => setStep(s=>Math.min(3,s+1));
+  const prev = () => setStep(s=>Math.max(0,s-1));
+
+  const emailValid = v => /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(v.trim());
+
+  const handleSubmit = async () => {
+    setSubmitting(true); setApiError('');
+    try {
+      const res = await fetch('/api/submit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          nombre: fd.nombre, email: fd.email,
+          sector: fd.sector, sectorOtro: fd.sectorOtro,
+          descripcion: fd.descripcion, solucion: fd.solucion,
+          precio: fd.precio, pais: fd.pais,
+          ciudadProvincia: fd.pais === 'España' ? fd.provincia : fd.ciudadLibre,
+          enterado: fd.enterado, enteradoRrss: fd.enteradoRrss,
+          enteradoOtroText: fd.enteradoOtroText,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Error desconocido');
+      setDone(true);
+    } catch (err) {
+      setApiError(err.message);
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const steps = [{n:'01',label:'Tú'},{n:'02',label:'El problema'},{n:'03',label:'La solución'},{n:'04',label:'Contexto'}];
+
+  const inputCls = "form-input";
+  const labelCls = "form-label";
+
+  const stepContent = [
+    /* Step 0 */
+    <div key={0} className="flex flex-col gap-5">
+      <div><label className={labelCls}>Nombre o apodo</label>
+        <input value={fd.nombre} onChange={e=>set('nombre',e.target.value)} placeholder="Como quieras que te llamemos" className={inputCls}/></div>
+      <div><label className={labelCls}>Email</label>
+        <input type="email" value={fd.email} onChange={e=>set('email',e.target.value)} placeholder="tu@email.com" className={inputCls}/></div>
+      <button onClick={next} disabled={!fd.nombre.trim()||!emailValid(fd.email)}
+        style={{marginTop:8,background:(!fd.nombre.trim()||!emailValid(fd.email))?'rgba(214,50,40,.35)':'#D63228',color:'#fff',border:'none',borderRadius:999,padding:'15px 28px',fontSize:15,fontWeight:600,cursor:(!fd.nombre.trim()||!emailValid(fd.email))?'not-allowed':'pointer',transition:'all .2s',display:'flex',alignItems:'center',gap:10,justifyContent:'center'}}>
+        Siguiente <span style={{fontFamily:'JetBrains Mono',fontSize:13,opacity:.8}}>→</span>
+      </button>
+    </div>,
+
+    /* Step 1 */
+    <div key={1} className="flex flex-col gap-5">
+      <div>
+        <label className={labelCls}>Sector del problema</label>
+        <select value={fd.sector} onChange={e=>set('sector',e.target.value)} className={inputCls} style={{cursor:'pointer'}}>
+          <option value="">Elige el sector…</option>
+          {SECTORS.map(s=><option key={s} value={s}>{s}</option>)}
+        </select>
+        {fd.sector==='Otro' && <input value={fd.sectorOtro} onChange={e=>set('sectorOtro',e.target.value)} placeholder="Describe el sector…" className={inputCls} style={{marginTop:10}}/>}
+      </div>
+      <div>
+        <label className={labelCls}>Describe tu problema</label>
+        <textarea value={fd.descripcion} onChange={e=>set('descripcion',e.target.value)} placeholder="Cuéntanoslo como se lo contarías a un amigo…" maxLength={600}
+          className={inputCls} style={{minHeight:160, resize:'none', lineHeight:1.55}}/>
+        <div style={{display:'flex',justifyContent:'flex-end',marginTop:6,fontFamily:'JetBrains Mono',fontSize:10,letterSpacing:'.1em',textTransform:'uppercase',color:'rgba(248,248,252,.3)'}}>
+          {fd.descripcion.length}/600
+        </div>
+      </div>
+      <div className="flex gap-3 flex-col-reverse sm:flex-row">
+        <button onClick={prev} style={{flex:'0 0 auto',background:'rgba(255,255,255,.08)',color:'rgba(248,248,252,.8)',border:'1px solid rgba(255,255,255,.12)',borderRadius:999,padding:'14px 22px',fontSize:14,cursor:'pointer'}}>← Atrás</button>
+        {fd.descripcion.length > 0 && fd.descripcion.length < 50 && (
+          <div style={{fontFamily:'JetBrains Mono',fontSize:10,letterSpacing:'.08em',textTransform:'uppercase',color:'rgba(214,50,40,.7)',textAlign:'right'}}>
+            Mínimo 50 caracteres ({50 - fd.descripcion.length} restantes)
+          </div>
+        )}
+        <button onClick={next} disabled={!fd.sector||(fd.sector==='Otro'&&!fd.sectorOtro.trim())||fd.descripcion.length<50}
+          style={{flex:1,background:(!fd.sector||(fd.sector==='Otro'&&!fd.sectorOtro.trim())||fd.descripcion.length<50)?'rgba(214,50,40,.35)':'#D63228',color:'#fff',border:'none',borderRadius:999,padding:'15px 28px',fontSize:15,fontWeight:600,cursor:(!fd.sector||(fd.sector==='Otro'&&!fd.sectorOtro.trim())||fd.descripcion.length<50)?'not-allowed':'pointer',transition:'all .2s',display:'flex',alignItems:'center',gap:10,justifyContent:'center'}}>
+          Siguiente <span style={{fontFamily:'JetBrains Mono',fontSize:13,opacity:.8}}>→</span>
+        </button>
+      </div>
+    </div>,
+
+    /* Step 2 */
+    <div key={2} className="flex flex-col gap-5">
+      <div>
+        <label className={labelCls}>¿Cómo lo resolverías tú?</label>
+        <textarea value={fd.solucion} onChange={e=>set('solucion',e.target.value)} placeholder="No tiene que ser técnico. Una intuición basta…" maxLength={400}
+          className={inputCls} style={{minHeight:130, resize:'none', lineHeight:1.55}}/>
+      </div>
+      <div>
+        <label className={labelCls}>¿Cuánto pagarías por la solución?</label>
+        <div className="flex flex-col gap-2">
+          {PRICES.map(p=>(
+            <button key={p} onClick={()=>set('precio',p)}
+              style={{background:fd.precio===p?'rgba(214,50,40,.25)':'rgba(255,255,255,.05)',border:`1px solid ${fd.precio===p?'rgba(214,50,40,.6)':'rgba(255,255,255,.1)'}`,borderRadius:12,padding:'12px 18px',color:'rgba(248,248,252,.85)',fontSize:14,cursor:'pointer',textAlign:'left',transition:'all .2s'}}>
+              {p}
+            </button>
+          ))}
+        </div>
+      </div>
+      <div className="flex gap-3 flex-col-reverse sm:flex-row">
+        <button onClick={prev} style={{flex:'0 0 auto',background:'rgba(255,255,255,.08)',color:'rgba(248,248,252,.8)',border:'1px solid rgba(255,255,255,.12)',borderRadius:999,padding:'14px 22px',fontSize:14,cursor:'pointer'}}>← Atrás</button>
+        <button onClick={next}
+          style={{flex:1,background:'#D63228',color:'#fff',border:'none',borderRadius:999,padding:'15px 28px',fontSize:15,fontWeight:600,cursor:'pointer',transition:'all .2s',display:'flex',alignItems:'center',gap:10,justifyContent:'center'}}>
+          Siguiente <span style={{fontFamily:'JetBrains Mono',fontSize:13,opacity:.8}}>→</span>
+        </button>
+      </div>
+    </div>,
+
+    /* Step 3 */
+    <div key={3} className="flex flex-col gap-5">
+      <div>
+        <label className={labelCls}>País</label>
+        <select value={fd.pais} onChange={e=>{set('pais',e.target.value);set('provincia','');set('ciudadLibre','');}} className={inputCls} style={{cursor:'pointer'}}>
+          <option value="">Selecciona tu país…</option>
+          {COUNTRIES.map(c=><option key={c} value={c}>{c}</option>)}
+        </select>
+      </div>
+      <div>
+        <label className={labelCls}>{fd.pais==='España'?'Provincia':'Ciudad o región'}</label>
+        {fd.pais==='España' ? (
+          <select value={fd.provincia} onChange={e=>set('provincia',e.target.value)} className={inputCls} style={{cursor:'pointer'}}>
+            <option value="">Selecciona provincia…</option>
+            {PROVINCIAS.map(p=><option key={p} value={p}>{p}</option>)}
+          </select>
+        ) : (
+          <input value={fd.ciudadLibre} onChange={e=>set('ciudadLibre',e.target.value)} placeholder="Tu ciudad o región" className={inputCls}/>
+        )}
+      </div>
+      <div>
+        <label className={labelCls}>¿Cómo te has enterado?</label>
+        <div className="flex flex-col gap-2">
+          {['Redes sociales','Boca a boca','Búsqueda por internet','Otro'].map(opt=>(
+            <div key={opt}>
+              <button onClick={()=>toggleArr('enterado',opt)}
+                style={{width:'100%',background:fd.enterado.includes(opt)?'rgba(214,50,40,.2)':'rgba(255,255,255,.05)',border:`1px solid ${fd.enterado.includes(opt)?'rgba(214,50,40,.5)':'rgba(255,255,255,.1)'}`,borderRadius:12,padding:'12px 18px',color:'rgba(248,248,252,.85)',fontSize:14,cursor:'pointer',textAlign:'left',display:'flex',alignItems:'center',gap:10,transition:'all .2s'}}>
+                <span style={{width:16,height:16,borderRadius:4,border:`2px solid ${fd.enterado.includes(opt)?'#D63228':'rgba(255,255,255,.3)'}`,background:fd.enterado.includes(opt)?'#D63228':'transparent',display:'inline-flex',alignItems:'center',justifyContent:'center',flexShrink:0,transition:'all .2s'}}>
+                  {fd.enterado.includes(opt)&&<span style={{color:'#fff',fontSize:10,fontWeight:700}}>✓</span>}
+                </span>
+                {opt}
+              </button>
+              {opt==='Redes sociales' && fd.enterado.includes('Redes sociales') && (
+                <div className="mt-2 ml-4 flex flex-col gap-1.5">
+                  {RRSS.map(r=>(
+                    <button key={r} onClick={()=>toggleArr('enteradoRrss',r)}
+                      style={{background:fd.enteradoRrss.includes(r)?'rgba(214,50,40,.15)':'rgba(255,255,255,.04)',border:`1px solid ${fd.enteradoRrss.includes(r)?'rgba(214,50,40,.4)':'rgba(255,255,255,.08)'}`,borderRadius:10,padding:'9px 14px',color:'rgba(248,248,252,.7)',fontSize:13,cursor:'pointer',textAlign:'left',transition:'all .2s'}}>
+                      {r}
+                    </button>
+                  ))}
+                </div>
+              )}
+              {opt==='Otro' && fd.enterado.includes('Otro') && (
+                <input value={fd.enteradoOtroText} onChange={e=>set('enteradoOtroText',e.target.value)} placeholder="Cuéntanoslo…" className={inputCls} style={{marginTop:8}}/>
+              )}
+            </div>
+          ))}
+        </div>
+      </div>
+      <div className="flex gap-3 flex-col-reverse sm:flex-row">
+        <button onClick={prev} style={{flex:'0 0 auto',background:'rgba(255,255,255,.08)',color:'rgba(248,248,252,.8)',border:'1px solid rgba(255,255,255,.12)',borderRadius:999,padding:'14px 22px',fontSize:14,cursor:'pointer'}}>← Atrás</button>
+        {apiError && (
+          <div style={{background:'rgba(214,50,40,.15)',border:'1px solid rgba(214,50,40,.3)',borderRadius:10,padding:'12px 16px',fontSize:13,color:'rgba(248,248,252,.8)',fontFamily:'JetBrains Mono',letterSpacing:'.04em'}}>
+            ⚠ {apiError}
+          </div>
+        )}
+        <button onClick={handleSubmit} disabled={submitting||!fd.pais||(!fd.provincia&&fd.pais==='España')||(!fd.ciudadLibre&&fd.pais!=='España'&&fd.pais!=='')||fd.enterado.length===0}
+          style={{flex:1,background:(submitting||!fd.pais||(!fd.provincia&&fd.pais==='España')||(!fd.ciudadLibre&&fd.pais!=='España'&&fd.pais!=='')||fd.enterado.length===0)?'rgba(214,50,40,.35)':'#D63228',color:'#fff',border:'none',borderRadius:999,padding:'15px 28px',fontSize:15,fontWeight:600,cursor:submitting?'wait':undefined,transition:'all .2s',display:'flex',alignItems:'center',gap:10,justifyContent:'center'}}
+          onMouseEnter={e=>{if(!submitting){e.currentTarget.style.transform='translateY(-2px)';e.currentTarget.style.boxShadow='0 12px 32px rgba(214,50,40,.4)';}}}
+          onMouseLeave={e=>{e.currentTarget.style.transform='none';e.currentTarget.style.boxShadow='none';}}>
+          {submitting ? 'Enviando…' : 'Enviar mi problema'}
+          {!submitting && <span style={{fontFamily:'JetBrains Mono',fontSize:13,opacity:.9}}>✓</span>}
+        </button>
+      </div>
+    </div>,
+  ];
+
+  return (
+    <section id="formulario" ref={ref} className="section-card relative overflow-hidden"
+      style={{background:'linear-gradient(160deg,#0d0d1a 0%,#080812 100%)', paddingTop:isM?'5rem':'9rem', paddingBottom:isM?'5rem':'10rem', paddingLeft:isM?'1.375rem':'3.5rem', paddingRight:isM?'1.375rem':'3.5rem'}}>
+      <ParticleField density={.00004} speed={.07} color="#ffffff" linkOpacity={.04} particleOpacity={.25} maxLink={120}/>
+
+      <div className="relative z-10" style={{maxWidth:780, margin:'0 auto'}}>
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-baseline gap-3 md:gap-0 mb-10 md:mb-14">
+          <div className="reveal" style={{fontFamily:'JetBrains Mono',fontSize:isM?10:11,letterSpacing:'.14em',textTransform:'uppercase',color:'rgba(248,248,252,.35)'}}>[ 03 ] Cuéntanoslo</div>
+          <h2 className="reveal reveal-delay-1" style={{fontFamily:S, fontWeight:400, fontSize:isM?'2.75rem':'5rem', lineHeight:.95, letterSpacing:'-.025em', color:'#f8f8fc', margin:0, textAlign:isM?'left':'right', maxWidth:isM?'100%':600}}>
+            Tu problema <span style={{fontStyle:'italic', color:'rgba(248,248,252,.5)'}}>importa.</span>
+          </h2>
+        </div>
+
+        {/* Step indicator */}
+        <div className="glass reveal reveal-delay-2 rounded-2xl overflow-hidden mb-6 md:mb-8">
+          <div style={{display:'grid', gridTemplateColumns:`repeat(4,1fr)`, gap:1, background:'rgba(255,255,255,.06)'}}>
+            {steps.map((s,i)=>(
+              <div key={i} onClick={()=>i<step&&setStep(i)} style={{background:i===step?'rgba(214,50,40,.25)':'transparent', padding:isM?'14px 12px':'18px 20px', display:'flex', flexDirection:'column', gap:4, cursor:i<step?'pointer':'default', transition:'background .3s ease', borderRight:i<3?'1px solid rgba(255,255,255,.06)':undefined}}>
+                <div style={{fontFamily:'JetBrains Mono',fontSize:10,letterSpacing:'.12em',textTransform:'uppercase',color:i===step?'rgba(248,248,252,.7)':'rgba(248,248,252,.3)',display:'flex',alignItems:'center',gap:6}}>
+                  <span>{s.n}</span>{i<step&&<span style={{color:'#D63228'}}>✓</span>}
+                </div>
+                <div style={{fontFamily:S, fontSize:isM?16:20, fontStyle:i===step?'italic':'normal', color:i===step?'#f8f8fc':'rgba(248,248,252,.4)'}}>{s.label}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Form body */}
+        <div className="glass reveal reveal-delay-3 rounded-2xl p-6 md:p-10">
+          {done ? (
+            <div style={{textAlign:'center',padding:isM?'2.5rem 0':'5rem 0'}}>
+              <div style={{fontFamily:S,fontStyle:'italic',fontSize:isM?52:80,lineHeight:.95,letterSpacing:'-.025em',color:'#D63228',marginBottom:'1.5rem'}}>Gracias.</div>
+              <p style={{fontSize:isM?16:18,lineHeight:1.6,color:'rgba(248,248,252,.6)',maxWidth:420,margin:'0 auto'}}>
+                Tu voz ya forma parte del mapa. Cuando lleguemos a 10.000, la IA analiza todo y empezamos a construir. Eres parte del movimiento.
+              </p>
+            </div>
+          ) : stepContent[step]}
+        </div>
+
+        <p className="reveal reveal-delay-4 text-center mt-5" style={{fontFamily:'JetBrains Mono',fontSize:10,letterSpacing:'.1em',textTransform:'uppercase',color:'rgba(248,248,252,.25)'}}>
+          Sin anuncios · Sin venta de datos · Solo escucha
+        </p>
+      </div>
+    </section>
+  );
+}
+
+/* ══════════════════════════════════════════════
+   FAQ — liquid glass, true accordion
+══════════════════════════════════════════════ */
+function FAQSection({ isM }) {
+  const ref = React.useRef(null);
+  useReveal(ref);
+  const [openIdx, setOpenIdx] = React.useState(0);
+  const toggle = i => setOpenIdx(o => o === i ? -1 : i);
+
+  const items = [
+    { q:'¿Cuál es el objetivo de dimetuproblema?', a:'Construir la primera app gratuita basada en los problemas reales de la ciudadanía. Recopilamos 10.000 testimonios, la IA detecta el problema que afecta a más gente y tiene solución posible, y lo convertimos en software libre para todos. Sin inversores. Sin agenda oculta.' },
+    { q:'¿Por qué debería compartir mi problema?', a:'Porque si no lo dices, nadie lo solucionará. Los sistemas se construyen para quienes tienen voz. Este proyecto existe para darte la tuya, y para que esa voz se sume a miles más hasta que sea imposible ignorarla.' },
+    { q:'¿Quién construye esto y cuándo?', a:'Una persona, acompañada de IA. Sin inversores, sin deadlines artificiales. Cuando lleguemos a 10.000 respuestas, empieza el análisis. A 50.000, desarrollamos la solución y la publicamos abierta para que cualquiera pueda usarla o auditarla.' },
+    { q:'¿Qué garantiza que sea siempre gratis?', a:'No tenemos modelo de negocio. No vendemos datos, no ponemos anuncios, no pedimos suscripciones. El código será abierto: cualquiera puede auditarlo en cualquier momento. Si algún día hay costes de servidor, se cubren con donaciones voluntarias.' },
+    { q:'¿Qué pasa con mis datos personales?', a:'Guardamos lo mínimo necesario, cifrado, en Airtable. Solo lo procesa la IA para detectar patrones de problemas. Nunca se venden. Nunca se ceden. Puedes pedir borrarlos en cualquier momento escribiéndonos a contacto@dimetuproblema.com.' },
+    { q:'¿Y si mi problema no se convierte en app?', a:'Todo testimonio importa y forma parte del análisis. Si el tuyo no es el primero en construirse, alimenta la siguiente fase del movimiento. Nada se descarta. Los problemas que no lleguen a fase uno pueden ser la base de fases dos, tres y siguientes.' },
+    { q:'¿Puedo colaborar de otra forma?', a:'Sí. Difunde el formulario, crea contenido, conecta el proyecto con periodistas o comunidades, o simplemente cuéntaselo a alguien. La mejor forma de avanzar es la palabra. Escríbenos a contacto@dimetuproblema.com.' },
+    { q:'¿Qué problema se construirá primero?', a:'El que tenga mayor impacto real: más personas afectadas, afectación más frecuente y posibilidad real de mejora con software. Publicaremos el criterio completo antes de empezar a construir, para que sea transparente y auditable.' },
+  ];
+
+  return (
+    <section id="faq" ref={ref} className="section-card relative overflow-hidden"
+      style={{background:'linear-gradient(160deg,#0f0f1c 0%,#08080e 100%)', paddingTop:isM?'5rem':'9rem', paddingBottom:isM?'5rem':'10rem', paddingLeft:isM?'1.375rem':'3.5rem', paddingRight:isM?'1.375rem':'3.5rem'}}>
+      <div className="relative z-10" style={{maxWidth:860, margin:'0 auto'}}>
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-baseline gap-3 md:gap-0 mb-10 md:mb-14">
+          <div className="reveal" style={{fontFamily:'JetBrains Mono',fontSize:isM?10:11,letterSpacing:'.14em',textTransform:'uppercase',color:'rgba(248,248,252,.35)'}}>[ 04 ] Antes de preguntar</div>
+          <h2 className="reveal reveal-delay-1" style={{fontFamily:S, fontWeight:400, fontSize:isM?'2.75rem':'5rem', lineHeight:.95, letterSpacing:'-.025em', color:'#f8f8fc', margin:0, textAlign:isM?'left':'right'}}>
+            Lo que todos <span style={{fontStyle:'italic'}}>quieren saber.</span>
+          </h2>
+        </div>
+
+        <div className="reveal reveal-delay-2" style={{borderTop:'1px solid rgba(255,255,255,.08)'}}>
+          {items.map((it,i) => {
+            const isOpen = openIdx===i;
+            return (
+              <div key={i} className={`glass ${i>0?'mt-2':''} rounded-2xl overflow-hidden`}
+                style={{background:isOpen?'rgba(214,50,40,.08)':'rgba(255,255,255,.04)', border:`1px solid ${isOpen?'rgba(214,50,40,.2)':'rgba(255,255,255,.06)'}`, transition:'background .3s ease, border-color .3s ease', marginTop:i===0?0:8}}>
+                <button onClick={()=>toggle(i)}
+                  style={{width:'100%',display:'flex',alignItems:'flex-start',gap:16,padding:isM?'18px 20px':'22px 28px',background:'none',border:'none',cursor:'pointer',textAlign:'left'}}>
+                  <span style={{fontFamily:'JetBrains Mono',fontSize:11,letterSpacing:'.12em',color:'rgba(248,248,252,.3)',flexShrink:0,paddingTop:isM?3:5}}>{String(i+1).padStart(2,'0')}</span>
+                  <span style={{flex:1,fontFamily:S,fontSize:isM?20:26,lineHeight:1.15,letterSpacing:'-.01em',fontStyle:isOpen?'italic':'normal',color:'#f8f8fc',transition:'font-style .2s ease'}}>{it.q}</span>
+                  <span style={{fontFamily:'JetBrains Mono',fontSize:isM?20:24,color:'rgba(248,248,252,.4)',flexShrink:0,transform:isOpen?'rotate(45deg)':'none',transition:'transform .32s cubic-bezier(.2,.8,.2,1)',paddingTop:isM?1:3}}>+</span>
+                </button>
+                <div className={`faq-body ${isOpen?'open':''}`}>
+                  <div style={{padding:isM?'0 20px 20px 52px':'0 28px 24px 60px',fontSize:isM?14.5:15.5,lineHeight:1.65,color:'rgba(248,248,252,.55)'}}>
+                    {it.a}
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/* ══════════════════════════════════════════════
+   FOOTER
+══════════════════════════════════════════════ */
+function Footer({ isM, liveCount }) {
+  const ref = React.useRef(null);
+  useReveal(ref);
+  const go = () => { const el=document.getElementById('formulario'); if(el)el.scrollIntoView({behavior:'smooth'}); };
+  const socials = [
+    { name:'Instagram', href:'https://www.instagram.com/dimetuproblema_com',
+      icon:<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r=".75" fill="currentColor" stroke="none"/></svg>},
+    { name:'TikTok',    href:'https://www.tiktok.com/@dimetuproblema.com',
+      icon:<svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M16.5 3h-3v12.2a2.3 2.3 0 1 1-2.3-2.3v-3a5.3 5.3 0 1 0 5.3 5.3V9.7a6.7 6.7 0 0 0 4 1.3v-3a3.7 3.7 0 0 1-3.7-3.7V3z"/></svg>},
+    { name:'Twitter',   href:'https://x.com/DimetuproblemaC',
+      icon:<svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231 5.45-6.231zm-1.161 17.52h1.833L7.084 4.126H5.117l11.966 15.644z"/></svg>},
+  ];
+
+  return (
+    <footer ref={ref} className="section-card relative overflow-hidden"
+      style={{background:'linear-gradient(160deg,#0c0c18 0%,#08080e 100%)', paddingTop:isM?'4rem':'8rem', paddingBottom:isM?'3rem':'4rem', paddingLeft:isM?'1.375rem':'3.5rem', paddingRight:isM?'1.375rem':'3.5rem'}}>
+      <ParticleField density={.00004} speed={.07} color="#ffffff" linkOpacity={.04} particleOpacity={.25} maxLink={120}/>
+
+      <div className="relative z-10">
+        {/* Big CTA */}
+        <div className="reveal" style={{paddingBottom:isM?'3.5rem':'6rem', borderBottom:'1px solid rgba(255,255,255,.07)', marginBottom:isM?'3rem':'5rem'}}>
+          <div style={{fontFamily:'JetBrains Mono',fontSize:11,letterSpacing:'.18em',textTransform:'uppercase',color:'rgba(248,248,252,.3)',marginBottom:isM?'1.25rem':'2rem'}}>→ Antes de irte</div>
+          <h2 style={{fontFamily:S, fontWeight:400, fontSize:isM?'clamp(44px,12vw,54px)':'clamp(72px,9vw,120px)', lineHeight:.92, letterSpacing:'-.03em', color:'#f8f8fc', marginBottom:0}}>
+            Tu problema <span style={{fontStyle:'italic', color:'rgba(248,248,252,.4)'}}>merece</span><br/>ser escuchado.
+          </h2>
+          <button onClick={go}
+            className="glass-btn glow-accent mt-8 md:mt-14 rounded-full font-semibold text-white inline-flex items-center gap-4"
+            style={{background:'rgba(214,50,40,.85)', padding:isM?'16px 26px':'20px 38px', fontSize:isM?15:17, border:'1px solid rgba(214,50,40,.5)', transition:'transform .3s ease, box-shadow .3s ease'}}
+            onMouseEnter={e=>{e.currentTarget.style.transform='translateY(-3px)';e.currentTarget.style.boxShadow='0 16px 40px rgba(214,50,40,.5)';}}
+            onMouseLeave={e=>{e.currentTarget.style.transform='none';e.currentTarget.style.boxShadow='0 0 32px rgba(214,50,40,.35), 0 4px 16px rgba(0,0,0,.3)';}}>
+            Únete al movimiento
+            <span style={{fontFamily:'JetBrains Mono',fontSize:14,opacity:.85}}>→</span>
+          </button>
+        </div>
+
+        <div className="flex flex-col md:flex-row justify-between items-start gap-10 md:gap-0">
+          <div className="reveal">
+            <div style={{fontFamily:S, fontSize:isM?52:100, lineHeight:.9, letterSpacing:'-.03em', color:'#f8f8fc'}}>
+              dime <span style={{fontStyle:'italic', color:'rgba(248,248,252,.4)'}}>tu problema</span>
+            </div>
+            <div style={{fontFamily:'JetBrains Mono',fontSize:11,letterSpacing:'.14em',textTransform:'uppercase',color:'rgba(248,248,252,.3)',marginTop:12}}>.com — un movimiento ciudadano · 2026</div>
+            <a href="mailto:contacto@dimetuproblema.com" style={{display:'block',fontFamily:S,fontSize:isM?17:20,color:'rgba(248,248,252,.6)',marginTop:20,textDecoration:'none',transition:'color .2s'}}
+              onMouseEnter={e=>e.target.style.color='rgba(248,248,252,.9)'} onMouseLeave={e=>e.target.style.color='rgba(248,248,252,.6)'}>
+              contacto@dimetuproblema.com
+            </a>
+          </div>
+
+          <div className="reveal reveal-delay-2 flex flex-col gap-3" style={{minWidth:240, alignItems:isM?'flex-start':'flex-end'}}>
+            <div style={{fontFamily:'JetBrains Mono',fontSize:10,letterSpacing:'.16em',textTransform:'uppercase',color:'rgba(248,248,252,.3)',marginBottom:4}}>Síguenos</div>
+            {socials.map(s=>(
+              <a key={s.name} href={s.href} target="_blank" rel="noopener noreferrer"
+                className="glass-btn rounded-full inline-flex items-center gap-3"
+                style={{padding:'10px 18px', minWidth:240, color:'rgba(248,248,252,.8)', textDecoration:'none', justifyContent:'space-between'}}>
+                <span style={{display:'inline-flex',alignItems:'center',gap:12}}>
+                  <span style={{display:'inline-flex',width:22,height:22,alignItems:'center',justifyContent:'center'}}>{s.icon}</span>
+                  <span style={{fontFamily:S, fontSize:17}}>{s.name}</span>
+                </span>
+                <span style={{fontFamily:'JetBrains Mono',fontSize:10,opacity:.5}}>↗</span>
+              </a>
+            ))}
+          </div>
+        </div>
+
+        <div className="flex flex-col md:flex-row justify-between gap-2 md:gap-0 mt-14 md:mt-20 pt-6"
+          style={{borderTop:'1px solid rgba(255,255,255,.06)', fontFamily:'JetBrains Mono', fontSize:10, letterSpacing:'.12em', textTransform:'uppercase', color:'rgba(248,248,252,.2)'}}>
+          <span>Construido por una persona + IA</span>
+          <span>Sin inversores · sin anuncios · sin paywall</span>
+          <span>{liveCount.toLocaleString('es-ES')} / 10.000</span>
+        </div>
+      </div>
+    </footer>
+  );
+}
+
+/* ══════════════════════════════════════════════
+   SCROLL STACK 3D EFFECT
+══════════════════════════════════════════════ */
+function useScrollStack() {
+  React.useEffect(() => {
+    const cards = document.querySelectorAll('.section-card');
+    const update = () => {
+      cards.forEach((card, i) => {
+        if (i === cards.length - 1) return;
+        const rect = card.getBoundingClientRect();
+        const progress = Math.max(0, Math.min(1, -rect.top / (rect.height * 0.5)));
+        if (progress > 0) {
+          card.style.transform = `scale(${1 - progress * 0.03}) translateY(${-progress * 18}px)`;
+          card.style.filter = `brightness(${1 - progress * 0.12})`;
+        } else {
+          card.style.transform = '';
+          card.style.filter = '';
+        }
+      });
+    };
+    window.addEventListener('scroll', update, { passive: true });
+    update();
+    return () => window.removeEventListener('scroll', update);
+  }, []);
+}
+
+/* ══════════════════════════════════════════════
+   APP
+══════════════════════════════════════════════ */
+function App() {
+  const isM = useMobile();
+  const [liveCount, setLiveCount] = React.useState(INITIAL_COUNT);
+  useScrollStack();
+
+  // Obtiene el contador real de Airtable y lo refresca cada 60 s
+  React.useEffect(() => {
+    const fetchCount = async () => {
+      try {
+        const r = await fetch('/api/count');
+        if (r.ok) { const d = await r.json(); if (typeof d.count === 'number') setLiveCount(d.count); }
+      } catch { /* en local sin servidor mantiene INITIAL_COUNT */ }
+    };
+    fetchCount();
+    const t = setInterval(fetchCount, 60_000);
+    return () => clearInterval(t);
+  }, []);
+
+  return (
+    <>
+      <Nav isM={isM}/>
+      <Hero isM={isM} liveCount={liveCount}/>
+      <HowItWorks isM={isM}/>
+      <CounterSection isM={isM} liveCount={liveCount}/>
+      <Manifesto isM={isM}/>
+      <FormSection isM={isM}/>
+      <FAQSection isM={isM}/>
+      <Footer isM={isM} liveCount={liveCount}/>
+    </>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
+</body>
+</html>
